@@ -5,18 +5,19 @@
 //
 // You may change the settings that are commented
 
+#define FASTLED_ESP8266_RAW_PIN_ORDER
 #define FASTLED_ALLOW_INTERRUPTS 0
-// To make sure that all leds get changed 100% of the time, we need to allow FastLED to disabled interrupts for a short while.
-// If you experience problems, please set this value to 1.
-// This is only needed for 3 wire (1 data line + Vcc and GND) chips (e.g. WS2812B). If you are using WS2801, APA102 or similar chipsets, you can set the value back to 1.
 
+extern "C" {
+  #include <user_interface.h>
+}
 #include <ESP8266WiFi.h>
 #include <WiFiUDP.h>
 #include <FastLED.h>
 #include <RCSwitch.h>
 
 #define NUM_LEDS 24 // Number of leds
-#define DATA_PIN 7 // Data pin for leds (the default pin 7 might correspond to pin 13 on some boards)
+#define DATA_PIN 13 // Data pin for leds
 #define SERIAL_DEBUG 0 // Serial debugging (0=Off, 1=On)
 
 #define ID 1 // Id of this lamp
@@ -48,10 +49,14 @@
 #endif
 
 // Network settings
+#define MULTICAST 1 // Usage of multicast (0=Static IP, 1=Multicast)
 const char* ssid = "..."; // WiFi SSID
 const char* password = "..."; // WiFi password
 const IPAddress multicastIP(239, 15, 18, 2); // Multicast IP address
-const int multicastPort = 49692; // Multicast port number
+const IPAddress staticIP(192, 168, 1, 200); // Static IP address
+const IPAddress gateway(192, 168, 1, 1); // Gateway IP address
+const IPAddress subnet(255, 255, 255, 0); // Subnet
+const int listeningPort = 49692; // Multicast port number
 
 CRGB leds[NUM_LEDS];
 WiFiUDP Udp;
@@ -71,7 +76,12 @@ void setup()
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
   //FastLED.setCorrection(TypicalSMD5050);
   FastLED.setCorrection(CRGB(RED_CORRECTION, GREEN_CORRECTION, BLUE_CORRECTION));
-  FastLED.showColor(CRGB(STARTUP_RED, STARTUP_GREEN, STARTUP_BLUE));
+
+  // Only show startup color if this is the initial boot and not a reset.
+  if ((*ESP.getResetInfoPtr()).reason == 0)
+  {
+    FastLED.showColor(CRGB(STARTUP_RED, STARTUP_GREEN, STARTUP_BLUE));
+  }
   
   #if RC_SWITCH == 1
     mySwitch.enableTransmit(RC_PIN);
@@ -82,6 +92,9 @@ void setup()
   #endif
   
   WiFi.begin(ssid, password);
+  #if MULTICAST == 0
+    WiFi.config(staticIP, gateway, subnet);
+  #endif
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
@@ -96,7 +109,11 @@ void setup()
     Serial.print(F("IP address: "));
     Serial.println(WiFi.localIP());
   #endif
-  Udp.beginMulticast(WiFi.localIP(), multicastIP, multicastPort);
+  #if MULTICAST == 1
+    Udp.beginMulticast(WiFi.localIP(), multicastIP, listeningPort);
+  #else
+    Udp.begin(listeningPort);
+  #endif
 }
 
 void loop()
