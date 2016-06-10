@@ -15,3 +15,6 @@
 [submodule "Libraries/ESP8266 Core"]
 	path = Libraries/ESP8266 Core
 	url = https://github.com/esp8266/Arduino.git
+[submodule "Libraries/NeoPixelBus"]
+	path = Libraries/NeoPixelBus
+	url = https://github.com/Makuna/NeoPixelBus

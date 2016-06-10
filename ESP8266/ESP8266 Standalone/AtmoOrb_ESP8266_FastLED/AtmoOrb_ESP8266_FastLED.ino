@@ -6,7 +6,6 @@
 // You may change the settings that are commented
 
 #define FASTLED_ESP8266_RAW_PIN_ORDER
-#define FASTLED_ALLOW_INTERRUPTS 0
 
 extern "C" {
   #include <user_interface.h>
@@ -17,7 +16,6 @@ extern "C" {
 #include <RCSwitch.h>
 
 #define NUM_LEDS 24 // Number of leds
-#define DATA_PIN 13 // Data pin for leds
 #define SERIAL_DEBUG 0 // Serial debugging (0=Off, 1=On)
 
 #define ID 1 // Id of this lamp
@@ -33,9 +31,9 @@ extern "C" {
 #define STARTUP_BLUE 100 // Color shown directly after power on
 
 // White adjustment
-#define RED_CORRECTION 220 // Color Correction
+#define RED_CORRECTION 255 // Color Correction
 #define GREEN_CORRECTION 255 // Color Correction
-#define BLUE_CORRECTION 180 // Color Correction
+#define BLUE_CORRECTION 255 // Color Correction
 
 // RC Switch
 #define RC_SWITCH 0 // RF transmitter to swtich remote controlled power sockets (0=Off, 1=On)
@@ -73,7 +71,7 @@ void clearSmoothColors();
 
 void setup()
 {
-  FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
+  FastLED.addLeds<APA102, BGR>(leds, NUM_LEDS);
   //FastLED.setCorrection(TypicalSMD5050);
   FastLED.setCorrection(CRGB(RED_CORRECTION, GREEN_CORRECTION, BLUE_CORRECTION));
 
